@@ -6,7 +6,7 @@ import gravatar from "gravatar";
 import path from "node:path";
 import * as fs from "node:fs/promises";
 import Jimp from "jimp";
-import {nanoid} from "nanoid"
+import { nanoid } from "nanoid";
 import { sendEmail } from "../helpers/index.js";
 
 const { SECRET_KEY, BASE_URL } = process.env;
@@ -23,22 +23,22 @@ export const register = async (req, res, next) => {
 
     const avatarURL = gravatar.url(email);
 
-    const verificationToken = nanoid()
+    const verificationToken = nanoid();
 
     const newUser = await User.create({
       ...req.body,
       password: hashPassword,
       avatarURL,
-      verificationToken
+      verificationToken,
     });
 
     const verifyEmail = {
       to: email,
       subject: "Verify email",
-      html: `<a target="_blank" href="${BASE_URL}/users/verify/${verificationToken}">Click verify email</a>`
-    }
+      html: `<a target="_blank" href="${BASE_URL}/users/verify/${verificationToken}">Click verify email</a>`,
+    };
 
-    await sendEmail(verifyEmail)
+    await sendEmail(verifyEmail);
 
     res.status(201).json({ email: newUser.email, subscription: "starter" });
   } catch (error) {
@@ -46,51 +46,54 @@ export const register = async (req, res, next) => {
   }
 };
 
-export const verifyEmail = async(req, res) => {
-  const { verificationToken } = req.params
-  
-  const user = await User.findOne({ verificationToken })
-  
+export const verifyEmail = async (req, res) => {
+  const { verificationToken } = req.params;
+
+  const user = await User.findOne({ verificationToken });
+
   if (!user) {
-      throw HttpError(401, "Email not found");    
+    throw HttpError(401, "Email not found");
   }
-  await User.findByIdAndUpdate(user._id, { verify: true, verificationToken: "" })
+  await User.findByIdAndUpdate(user._id, {
+    verify: true,
+    verificationToken: "",
+  });
   res.json({
-    message: 'Verification successful'
-  })
-}
+    message: "Verification successful",
+  });
+};
 
 export const resendVerifyEmail = async (req, res) => {
   try {
-    const { email } = req.body
+    const { email } = req.body;
 
-     if (!email) {
+    if (!email) {
       return res.status(400).json({ message: "missing required field email" });
     }
-    
-    const user = await User.findOne({ email })
+
+    const user = await User.findOne({ email });
 
     if (!user) {
-      throw HttpError(401, "Email not found")
-    }
-    
-    if (user.verify) {
-      throw HttpError(400, "Verification has already been passed")
-    }
-     const verifyEmail = {
-      to: email,
-      subject: "Verify email",
-      html: `<a target="_blank" href="${BASE_URL}/users/verify/${user.verificationToken}">Click verify email</a>`
+      throw HttpError(401, "Email not found");
     }
 
-    await sendEmail(verifyEmail)
+    if (user.verify) {
+      throw HttpError(400, "Verification has already been passed");
+    }
+    const verifyEmail = {
+      to: email,
+      subject: "Verify email",
+      html: `<a target="_blank" href="${BASE_URL}/users/verify/${user.verificationToken}">Click verify email</a>`,
+    };
+
+    await sendEmail(verifyEmail);
     res.json({
-      message:"Verification email sent"
-    })
+      message: "Verification email sent",
+    });
   } catch (error) {
-    next(error)
+    next(error);
   }
-}
+};
 
 export const login = async (req, res, next) => {
   try {
@@ -102,7 +105,6 @@ export const login = async (req, res, next) => {
 
     if (!user.verify) {
       throw HttpError(401, "Email not verified");
-      
     }
 
     const passwordCompare = await bcrypt.compare(password, user.password);
@@ -178,16 +180,16 @@ export const updateAvatar = async (req, res, next) => {
       path.resolve("public/avatars", req.file.filename)
     );
 
+    const avatarURL = `/avatars/${req.file.filename}`;
+
     const user = await User.findByIdAndUpdate(
       req.user.id,
-      { avatar: req.file.filename },
+      { avatarURL: req.file.filename },
       { new: true }
     );
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-
-    const avatarURL = `/avatars/${req.file.filename}`;
 
     const image = await Jimp.read(
       path.resolve("public/avatars", req.file.filename)
