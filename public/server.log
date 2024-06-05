@@ -330,3 +330,8 @@ POST /users/register 201 59 - 1874.772 ms
 GET /users/verify/xSmeGQiWzJTB__R31Tt82 404 29 - 13.696 ms
 GET /favicon.ico 404 29 - 6.471 ms
 GET /users/verify/xSmeGQiWzJTB__R31Tt82 200 37 - 412.466 ms
+POST /users/login 401 32 - 67.963 ms
+POST /auth/register 404 29 - 1.848 ms
+POST /users/register 400 37 - 3.963 ms
+POST /users/register 201 52 - 847.711 ms
+POST /users/login 401 32 - 38.803 ms
